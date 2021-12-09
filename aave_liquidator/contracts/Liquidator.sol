@@ -57,7 +57,7 @@ contract Liquidator is BaseUniswapAdapter {
      * @param amounts Amount of the asset to be swapped
      * @param premiums Fee of the flash loan
      * @param initiator Address of the caller
-     * @param params Additional variadic field to include extra params. Expected parameters:
+     * @param parametres Additional variadic field to include extra params. Expected parameters:
      *   address collateralAsset The collateral asset to release and will be exchanged to pay the flash loan premium
      *   address borrowedAsset The asset that must be covered
      *   address user The user address with a Health Factor below 1
@@ -69,15 +69,16 @@ contract Liquidator is BaseUniswapAdapter {
         uint256[] calldata amounts,
         uint256[] calldata premiums,
         address initiator,
-        bytes calldata params
+        bytes calldata parametres
     ) external override returns (bool) {
-        console.log("executeOperationn");
+        console.log("executeOperation");
+        console.logBytes(parametres);
         require(
             msg.sender == address(LENDING_POOL),
             "CALLER_MUST_BE_LENDING_POOL"
         );
 
-        LiquidationParams memory decodedParams = _decodeParams(params);
+        LiquidationParams memory decodedParams = _decodeParams(parametres);
 
         require(
             assets.length == 1 && assets[0] == decodedParams.borrowedAsset,
@@ -288,7 +289,7 @@ contract Liquidator is BaseUniswapAdapter {
         address[] calldata assets,
         uint256[] calldata amounts,
         uint256[] calldata modes,
-        bytes calldata params
+        bytes calldata parametres
     ) external {
         console.log("requestFlashLoan");
         address receiverAddress = address(this);
@@ -300,11 +301,11 @@ contract Liquidator is BaseUniswapAdapter {
             amounts,
             modes,
             onBehalfOf,
-            params,
+            parametres,
             0
         );
         console.log("concluded loan");
-        LiquidationParams memory decodedParams = _decodeParams(params);
+        LiquidationParams memory decodedParams = _decodeParams(parametres);
 
         // Transfer the remaining collateral to the msg.sender
         uint256 allBalance = IERC20(decodedParams.collateralAsset).balanceOf(

@@ -18,15 +18,15 @@ describe("Liquidator", async function () {
     // let bob: SignerWithAddress;
 
 
-    const daiWethLpAddress: string = '0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11';
+    const usdcWethLpAddress: string = '0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc';
     // const wbtcWethLpAddress: string = '0x0000000000000000000000000000000000000000';
-    const aDAITokenV2: string = '0x028171bca77440897b824ca71d1c56cac55b68a3';
-    const liquidatedWeth: string = '19547068301473';
-    const swappedWeth: string = '18698584728455';
-    const wethSwapDai: string = '45763361222088819';
+    const aWethTokenV2: string = '0x030bA81f1c18d280636F32af80b9AAd02Cf0854e';
+    const liquidatedUsdc: string = '5837574642';
+    const swappedUsdc: string = '5606328986';
+    const usdcSwapWeth: string = '1426370603426422312';
 
-    let daiToken: IERC20;
-    let daiTokenInterface: IERC20Interface;
+    let usdcToken: IERC20;
+    let usdcTokenInterface: IERC20Interface;
 
     let wethToken: IERC20;
     let wethTokenInterface: IERC20Interface;
@@ -51,8 +51,8 @@ describe("Liquidator", async function () {
         await liquidatorContract.deployed();
 
         // setup USDC IERC20 interface
-        daiToken = IERC20__factory.connect(process.env.MAINNET_DAI!, alice);
-        daiTokenInterface = daiToken.interface;
+        usdcToken = IERC20__factory.connect(process.env.MAINNET_USDC!, alice);
+        usdcTokenInterface = usdcToken.interface;
 
         // setup WETH IERC20 interface
         wethToken = IERC20__factory.connect(process.env.MAINNET_WETH!, alice);
@@ -68,7 +68,7 @@ describe("Liquidator", async function () {
 
 
         await wethToken.deployed();
-        await daiToken.deployed();
+        await usdcToken.deployed();
         await aaveAddressProvider.deployed();
         await aaveLendingPool.deployed();
 
@@ -79,7 +79,7 @@ describe("Liquidator", async function () {
 
     describe("check initial state", () => {
         it("should expect block number to be correct", async () => {
-            expect(initBlock).to.be.equal(Number(process.env.TARGET_BLOCK_3));
+            expect(initBlock).to.be.equal(Number(process.env.TARGET_BLOCK_2));
         });
     });
 
@@ -95,12 +95,12 @@ describe("Liquidator", async function () {
         it("Should have the correct address for WETH token contract.", async () => {
             expect(wethToken.address.toLowerCase()).to.be.equal(process.env.MAINNET_WETH);
         });
-        it("Should have a proper address for DAI token contract.", async () => {
-            expect(daiToken.address).to.be.properAddress;
+        it("Should have a proper address for USDC token contract.", async () => {
+            expect(usdcToken.address).to.be.properAddress;
         });
 
-        it("Should have the correct address for DAI token contract.", async () => {
-            expect(daiToken.address.toLowerCase()).to.be.equal(process.env.MAINNET_DAI);
+        it("Should have the correct address for USDC token contract.", async () => {
+            expect(usdcToken.address.toLowerCase()).to.be.equal(process.env.MAINNET_USDC);
         });
 
         it("All WETH Token balance should be empty for liquidator contract.", async () => {
@@ -110,28 +110,28 @@ describe("Liquidator", async function () {
             expect(await wethToken.balanceOf(alice.address)).to.be.equal(BigInt(0));
             //TODO: should contract hold ETH for gas or should msg.sender?
         });
-        it("All DAI Token balance should be empty for liquidator contract.", async () => {
-            expect(await daiToken.balanceOf(liquidatorContract.address)).to.be.equal(BigInt(0));
+        it("All USDC Token balance should be empty for liquidator contract.", async () => {
+            expect(await usdcToken.balanceOf(liquidatorContract.address)).to.be.equal(BigInt(0));
         });
-        it("All DAI Token balance should be empty for alice.", async () => {
-            expect(await daiToken.balanceOf(alice.address)).to.be.equal(BigInt(0));
+        it("All USDC Token balance should be empty for alice.", async () => {
+            expect(await usdcToken.balanceOf(alice.address)).to.be.equal(BigInt(0));
             //TODO: should contract hold ETH for gas or should msg.sender?
         });
     });
 
     describe("Liquidation Execution", async () => {
         before("call FlashLoan", async () => {
-            console.log("WETH:DAI liquidation @block:", initBlock);
+            console.log("USDC:WETH liquidation @block:", initBlock);
             const newParams = ethers.utils.defaultAbiCoder.encode(
                 ["address", "address", "address", "uint256", "bool"],
-                [process.env.MAINNET_WETH, process.env.MAINNET_DAI, process.env.TEST_TARGET_USER_ADDRESS_3, process.env.TEST_LOAN_AMOUNT_DAI, false]
+                [process.env.MAINNET_USDC, process.env.MAINNET_WETH, process.env.TEST_TARGET_USER_ADDRESS_2, process.env.TEST_LOAN_AMOUNT_WETH, false]
             );
 
 
-            const flashLoan = await liquidatorContract.requestFlashLoan([process.env.MAINNET_DAI!], [process.env.TEST_LOAN_AMOUNT_DAI!], [0], newParams);
+            const flashLoan = await liquidatorContract.requestFlashLoan([process.env.MAINNET_WETH!], [process.env.TEST_LOAN_AMOUNT_WETH!], [0], newParams);
             txHash = await flashLoan.wait();
 
-            // console.log("logs:", txHash.logs);
+            console.log("logs:", txHash.logs);
         });
         describe("RequestFlashLoan", () => {
             let loanedTransferTx: any;
@@ -147,18 +147,18 @@ describe("Liquidator", async function () {
             it("Should be a transfer log.", () => {
                 expect(parsedLogs.name).to.be.equal("Transfer");
             });
-            it("Should be a transfer of DAI.", () => {
-                expect(loanedTransferTx?.address.toLowerCase()).to.be.equal(process.env.MAINNET_DAI?.toLowerCase());
+            it("Should be a transfer of WETH.", () => {
+                expect(loanedTransferTx?.address.toLowerCase()).to.be.equal(process.env.MAINNET_WETH?.toLowerCase());
             });
             it("Should have the liquidator contract as the loan receiver.", () => {
                 expect(parsedLogs.args["to"].toLowerCase()).to.be.equal(liquidatorContract.address.toLowerCase());
             });
 
             it("Should have received the requested loan amount.", () => {
-                expect(parsedLogs.args["value"]).to.be.equal(BigInt(process.env.TEST_LOAN_AMOUNT_DAI!));
+                expect(parsedLogs.args["value"]).to.be.equal(BigInt(process.env.TEST_LOAN_AMOUNT_WETH!));
             });
         });
-        describe("Approve DAI Spending by Lending pool contract", () => {
+        describe("Approve WETH Spending by Lending pool contract", () => {
             let txLogs: any;
             let parsedLogs: LogDescription;
             before("Find relevant log.", () => {
@@ -167,24 +167,24 @@ describe("Liquidator", async function () {
                 txLogs = txHash.logs.find((transaction) => { return transaction.logIndex == 1 });
                 const data: string = txLogs?.data;
                 const topics: string[] = txLogs?.topics;
-                parsedLogs = daiTokenInterface.parseLog({ data, topics });
+                parsedLogs = wethTokenInterface.parseLog({ data, topics });
                 // console.log("parsed", parsedLogs);
                 // console.log("txLog", txLogs);
             });
-            it("Should approve spending of DAI.", () => {
-                expect(txLogs?.address.toLowerCase()).to.be.equal(daiToken.address.toLowerCase());
+            it("Should approve spending of WETH.", () => {
+                expect(txLogs?.address.toLowerCase()).to.be.equal(wethToken.address.toLowerCase());
             });
-            it("Should approve spending of DAI by Lending pool.", () => {
+            it("Should approve spending of WETH by Lending pool.", () => {
                 expect(parsedLogs.args["spender"].toLowerCase()).to.be.equal(aaveLendingPool.address.toLowerCase());
             });
-            it("liquidator contract Should approve spending of its DAI.", () => {
+            it("liquidator contract Should approve spending of its WETH.", () => {
                 expect(parsedLogs.args["owner"].toLowerCase()).to.be.equal(liquidatorContract.address.toLowerCase());
             });
             it("Should approve spending in amount of [loanAmount].", () => {
-                expect(parsedLogs.args["value"]).to.be.equal(process.env.TEST_LOAN_AMOUNT_DAI!);
+                expect(parsedLogs.args["value"]).to.be.equal(process.env.TEST_LOAN_AMOUNT_WETH!);
             });
         });
-        describe("Transfer DAI to Aave DAI Reserve", () => {
+        describe("Transfer WETH to Aave WETH Reserve", () => {
             let txLogs: any;
             let parsedLogs: LogDescription;
             before("Find relevant log.", () => {
@@ -193,32 +193,32 @@ describe("Liquidator", async function () {
                 txLogs = txHash.logs.find((transaction) => { return transaction.logIndex == 24 });
                 const data: string = txLogs?.data;
                 const topics: string[] = txLogs?.topics;
-                parsedLogs = daiTokenInterface.parseLog({ data, topics });
+                parsedLogs = wethTokenInterface.parseLog({ data, topics });
 
             });
             it("Should be a 'Transfer' event log.", () => {
                 expect(parsedLogs.name).to.be.equal("Transfer");
             });
-            it("Should be transfering DAI Token.", () => {
-                expect(txLogs?.address.toLowerCase()).to.be.equal(daiToken.address.toLowerCase());
+            it("Should be transfering WETH Token.", () => {
+                expect(txLogs?.address.toLowerCase()).to.be.equal(wethToken.address.toLowerCase());
             });
-            it("Should transfer DAI from liquidation contract.", () => {
+            it("Should transfer WETH from liquidation contract.", () => {
                 expect(parsedLogs.args["from"].toLowerCase()).to.be.equal(liquidatorContract.address.toLowerCase());
             });
-            it("Should transfer DAI to aave DAI reserve.", () => {
-                expect(parsedLogs.args["to"].toLowerCase()).to.be.equal(aDAITokenV2.toLowerCase());
+            it("Should transfer WETH to aave WETH reserve.", () => {
+                expect(parsedLogs.args["to"].toLowerCase()).to.be.equal(aWethTokenV2.toLowerCase());
             });
-            it("Should transfer DAI in amount of [debtToCover].", () => {
-                expect(parsedLogs.args["value"]).to.be.equal(process.env.TEST_TARGET_DEBT_TO_COVER_DAI!);
+            it("Should transfer WETH in amount of [debtToCover].", () => {
+                expect(parsedLogs.args["value"]).to.be.equal(process.env.TEST_TARGET_DEBT_TO_COVER_WETH!);
             });
         });
         describe("executeOperation", () => {
 
             let parsedLogs: LogDescription;
             let txLogs: any;
-            const collateralAsset = process.env.MAINNET_WETH!;
-            const debtAsset = process.env.MAINNET_DAI!;
-            const debtToCover = process.env.TEST_TARGET_DEBT_TO_COVER_DAI!;
+            const collateralAsset = process.env.MAINNET_USDC!;
+            const debtAsset = process.env.MAINNET_WETH!;
+            const debtToCover = process.env.TEST_TARGET_DEBT_TO_COVER_WETH!;
 
             const receiveAToken = false;
             before("Find liquidation call log.", () => {
@@ -239,13 +239,13 @@ describe("Liquidator", async function () {
             it("Should be emmited by aave Lending pool.", () => {
                 expect(txLogs?.address.toLowerCase()).to.be.equal(aaveLendingPool.address.toLowerCase());
             });
-            it("Should have liquidated DAI debt.", () => {
+            it("Should have liquidated WETH debt.", () => {
                 expect(parsedLogs.args["debtAsset"].toLowerCase()).to.be.equal(debtAsset.toLowerCase());
             });
-            it("Should have liquidated the correct amount of DAI token.", () => {
+            it("Should have liquidated the correct amount of WETH token.", () => {
                 expect(parsedLogs.args["debtToCover"]).to.be.equal(debtToCover);
             });
-            it("Should have received WETH token in return.", () => {
+            it("Should have received USDC token in return.", () => {
                 expect(parsedLogs.args["collateralAsset"].toLowerCase()).to.be.equal(collateralAsset.toLowerCase());
             });
 
@@ -256,7 +256,7 @@ describe("Liquidator", async function () {
                 expect(parsedLogs.args["receiveAToken"]).to.be.equal(receiveAToken);
             });
         });
-        describe("Approve spending of WETH by uniswap Router.", () => {
+        describe("Approve spending of USDC by uniswap Router.", () => {
             let parsedLogs: LogDescription;
             let txLogs: any;
             before("get approval log for swap.", () => {
@@ -265,7 +265,7 @@ describe("Liquidator", async function () {
                 });
                 const data: string = txLogs.data;
                 const topics: string[] = txLogs.topics;
-                parsedLogs = wethTokenInterface.parseLog({ data, topics });
+                parsedLogs = usdcTokenInterface.parseLog({ data, topics });
                 // console.log(parsedLogs);
                 // console.log(BigInt(parsedLogs.args["value"]));
             });
@@ -273,7 +273,7 @@ describe("Liquidator", async function () {
                 expect(parsedLogs.name).to.be.equal("Approval");
             });
             it("Should have approved USDC", () => {
-                expect(txLogs?.address.toLowerCase()).to.be.equal(wethToken.address.toLowerCase());
+                expect(txLogs?.address.toLowerCase()).to.be.equal(usdcToken.address.toLowerCase());
             });
             it("Should have been approved for uniswap router", () => {
                 expect(parsedLogs.args["spender"].toLowerCase()).to.be.equal(uniswapRouterV2.address.toLowerCase());
@@ -282,10 +282,10 @@ describe("Liquidator", async function () {
                 expect(parsedLogs.args["owner"].toLowerCase()).to.be.equal(liquidatorContract.address.toLowerCase());
             });
             it("Should have approved the correct amount.", () => {
-                expect(parsedLogs.args["value"]).to.be.equal(BigInt(liquidatedWeth));
+                expect(parsedLogs.args["value"]).to.be.equal(BigInt(liquidatedUsdc));
             });
         });
-        describe("Transfer WETH from liquidator contract to DAI/WETC LP reserve.", () => {
+        describe("Transfer USDC from liquidator contract to USDC/WETC LP reserve.", () => {
             let parsedLogs: LogDescription;
             let txLogs: any;
             before("get transfer log.", () => {
@@ -294,29 +294,29 @@ describe("Liquidator", async function () {
                 });
                 const data: string = txLogs.data;
                 const topics: string[] = txLogs.topics;
-                parsedLogs = wethTokenInterface.parseLog({ data, topics });
+                parsedLogs = usdcTokenInterface.parseLog({ data, topics });
                 // console.log(parsedLogs);
                 // console.log(BigInt(parsedLogs.args["value"]));
             });
             it("Should be a transfer event log.", () => {
                 expect(parsedLogs.name).to.be.equal("Transfer");
             });
-            it("Should have transfered WETH.", () => {
-                expect(txLogs?.address.toLowerCase()).to.be.equal(wethToken.address.toLowerCase());
+            it("Should have transfered USDC.", () => {
+                expect(txLogs?.address.toLowerCase()).to.be.equal(usdcToken.address.toLowerCase());
             });
             it("Should have transfered to uniswap reserve.", () => {
-                expect(parsedLogs.args["to"].toLowerCase()).to.be.equal(daiWethLpAddress.toLowerCase());
+                expect(parsedLogs.args["to"].toLowerCase()).to.be.equal(usdcWethLpAddress.toLowerCase());
             });
             it("Should have transfered from liquidator contract", () => {
                 expect(parsedLogs.args["from"].toLowerCase()).to.be.equal(liquidatorContract.address.toLowerCase());
             });
             it("Should have transfered correct amount.", () => {
-                expect(parsedLogs.args["value"]).to.be.equal(BigInt(swappedWeth));
+                expect(parsedLogs.args["value"]).to.be.equal(BigInt(swappedUsdc));
             });
 
         });
 
-        describe("Transfer DAI from DAI/WETH LP reserve to liquidator contract.", () => {
+        describe("Transfer WETH from USDC/WETH LP reserve to liquidator contract.", () => {
             let parsedLogs: LogDescription;
             let txLogs: any;
             before("get transfer log.", () => {
@@ -325,26 +325,26 @@ describe("Liquidator", async function () {
                 });
                 const data: string = txLogs.data;
                 const topics: string[] = txLogs.topics;
-                parsedLogs = daiTokenInterface.parseLog({ data, topics });
+                parsedLogs = wethTokenInterface.parseLog({ data, topics });
 
             });
             it("Should be an transfer event", () => {
                 expect(parsedLogs.name).to.be.equal("Transfer");
             });
             it("Should have transfered WETH", () => {
-                expect(txLogs?.address.toLowerCase()).to.be.equal(daiToken.address.toLowerCase());
+                expect(txLogs?.address.toLowerCase()).to.be.equal(wethToken.address.toLowerCase());
             });
             it("Should have been transfered from uniswap router", () => {
-                expect(parsedLogs.args["from"].toLowerCase()).to.be.equal(daiWethLpAddress.toLowerCase());
+                expect(parsedLogs.args["from"].toLowerCase()).to.be.equal(usdcWethLpAddress.toLowerCase());
             });
             it("Should have been transfered to liquidator contract", () => {
                 expect(parsedLogs.args["to"].toLowerCase()).to.be.equal(liquidatorContract.address.toLowerCase());
             });
             it("Should have transfered the correct amount.", () => {
-                expect(parsedLogs.args["value"]).to.be.equal(BigInt(wethSwapDai));
+                expect(parsedLogs.args["value"]).to.be.equal(BigInt(usdcSwapWeth));
             });
         });
-        describe("Completed swap from WETH to DAI.", () => {
+        describe("Completed swap from USDC to WETH.", () => {
             let parsedLogs: LogDescription;
             let txLogs: any;
             before("Find log where swap should have happened.", () => {
@@ -363,22 +363,22 @@ describe("Liquidator", async function () {
             it("Should be a [Swapped] event log.", () => {
                 expect(parsedLogs.name).to.be.equal("Swapped")
             });
-            it("Should have swapped from WETH.", () => {
-                expect(parsedLogs.args["fromAsset"].toLowerCase()).to.be.equal(wethToken.address.toLowerCase())
+            it("Should have swapped from USDC.", () => {
+                expect(parsedLogs.args["fromAsset"].toLowerCase()).to.be.equal(usdcToken.address.toLowerCase())
             });
-            it("Should have swapped to DAI.", () => {
-                expect(parsedLogs.args["toAsset"].toLowerCase()).to.be.equal(daiToken.address.toLowerCase());
+            it("Should have swapped to WETH.", () => {
+                expect(parsedLogs.args["toAsset"].toLowerCase()).to.be.equal(wethToken.address.toLowerCase());
             });
 
-            it("Should have swapped WETH correct amount.", () => {
-                expect(parsedLogs.args["fromAmount"]).to.be.equal(BigInt(swappedWeth));
+            it("Should have swapped USDC correct amount.", () => {
+                expect(parsedLogs.args["fromAmount"]).to.be.equal(BigInt(swappedUsdc));
             });
-            it("Should have swapped for exact DAI.", () => {
-                expect(parsedLogs.args["receivedAmount"]).to.be.equal(BigInt(wethSwapDai));
+            it("Should have swapped for exact WETH.", () => {
+                expect(parsedLogs.args["receivedAmount"]).to.be.equal(BigInt(usdcSwapWeth));
             });
 
         });
-        describe("Approve DAI transfer for paying back loan.", () => {
+        describe("Approve WETH transfer for paying back loan.", () => {
             let parsedLogs: LogDescription;
             let txLogs: any;
             before("Find log where approval should have happened.", () => {
@@ -388,17 +388,17 @@ describe("Liquidator", async function () {
                 });
                 const data: string = txLogs.data;
                 const topics: string[] = txLogs.topics;
-                parsedLogs = daiTokenInterface.parseLog({ data, topics });
+                parsedLogs = wethTokenInterface.parseLog({ data, topics });
 
             });
             it("Should be a [Approval] event log.", () => {
                 expect(parsedLogs.name).to.be.equal("Approval")
             });
-            it("Should approve spending of DAI.", () => {
-                expect(txLogs?.address.toLowerCase()).to.be.equal(daiToken.address.toLowerCase())
+            it("Should approve spending of WETH.", () => {
+                expect(txLogs?.address.toLowerCase()).to.be.equal(wethToken.address.toLowerCase())
             });
             it("Should approve spending of [FlashLoanDebt] amount.", () => {
-                expect(Number(parsedLogs.args["value"])).to.be.greaterThan(Number(process.env.TEST_LOAN_AMOUNT_DAI!));
+                expect(Number(parsedLogs.args["value"])).to.be.greaterThan(Number(process.env.TEST_LOAN_AMOUNT_WETH!));
             });
 
             it("Should be approved by liquidator contract.", () => {
@@ -409,7 +409,7 @@ describe("Liquidator", async function () {
             });
 
         });
-        describe("Transfer DAI to Aave DAI reserve.", () => {
+        describe("Transfer WETH to Aave WETH reserve.", () => {
             let parsedLogs: LogDescription;
             let txLogs: any;
             before("Find log where transfer should have happened.", () => {
@@ -419,26 +419,26 @@ describe("Liquidator", async function () {
                 });
                 const data: string = txLogs.data;
                 const topics: string[] = txLogs.topics;
-                parsedLogs = daiTokenInterface.parseLog({ data, topics });
+                parsedLogs = wethTokenInterface.parseLog({ data, topics });
                 // console.log(parsedLogs);
                 // console.log(BigInt(parsedLogs.args["value"]));
             });
             it("Should be a [Transfer] event log.", () => {
                 expect(parsedLogs.name).to.be.equal("Transfer");
             });
-            it("Should have sent DAI token.", () => {
-                expect(txLogs?.address.toLowerCase()).to.be.equal(daiToken.address.toLowerCase());
+            it("Should have sent WETH token.", () => {
+                expect(txLogs?.address.toLowerCase()).to.be.equal(wethToken.address.toLowerCase());
             });
 
             it("Should have been in amount of flashLoan debt.", () => {
-                expect(Number(parsedLogs.args["value"])).to.be.greaterThan(Number(process.env.TEST_LOAN_AMOUNT_DAI!));
+                expect(Number(parsedLogs.args["value"])).to.be.greaterThan(Number(process.env.TEST_LOAN_AMOUNT_WETH!));
             });
 
             it("Should be transfered by liquidator contract", () => {
                 expect(parsedLogs.args["from"].toLowerCase()).to.be.equal(liquidatorContract.address.toLowerCase());
             });
-            it("Should transfer flashLoan debt to aave DAI token reserve", () => {
-                expect(parsedLogs.args["to"].toLowerCase()).to.be.equal(aDAITokenV2.toLowerCase());
+            it("Should transfer flashLoan debt to aave WETH token reserve", () => {
+                expect(parsedLogs.args["to"].toLowerCase()).to.be.equal(aWethTokenV2.toLowerCase());
             });
         });
         describe("Conclude FlashLoan.", () => {
@@ -460,11 +460,11 @@ describe("Liquidator", async function () {
             it("Should have been initiated by the liquidator contract.", () => {
                 expect(parsedLogs.args['initiator'].toLowerCase()).to.be.equal(liquidatorContract.address.toLowerCase());
             });
-            it("Should have sent DAI.", () => {
-                expect(parsedLogs.args["asset"].toLowerCase()).to.equal(daiToken.address.toLowerCase());
+            it("Should have sent USDC.", () => {
+                expect(parsedLogs.args["asset"].toLowerCase()).to.equal(wethToken.address.toLowerCase());
             });
             it("Should have sent amount to the liquidator contract.", () => {
-                expect(parsedLogs.args["amount"]).to.be.equal(process.env.TEST_LOAN_AMOUNT_DAI);
+                expect(parsedLogs.args["amount"]).to.be.equal(process.env.TEST_LOAN_AMOUNT_WETH);
             });
 
         });
@@ -478,7 +478,7 @@ describe("Liquidator", async function () {
                 });
                 const data: string = txLogs.data;
                 const topics: string[] = txLogs.topics;
-                parsedLogs = wethTokenInterface.parseLog({ data, topics });
+                parsedLogs = usdcTokenInterface.parseLog({ data, topics });
                 // console.log("parsed logs", parsedLogs);
                 // console.log("parsed logs", BigInt(parsedLogs.args["value"]));
             });
@@ -486,7 +486,7 @@ describe("Liquidator", async function () {
                 expect(parsedLogs.name).to.be.equal("Transfer");
             });
             it("Should have transfered collateral asset", () => {
-                expect(txLogs?.address.toLowerCase()).to.be.equal(wethToken.address.toLowerCase());
+                expect(txLogs?.address.toLowerCase()).to.be.equal(usdcToken.address.toLowerCase());
             });
             it("Should have transfered to msg.sender", () => {
                 expect(parsedLogs.args["to"].toLowerCase()).to.equal(alice.address.toLowerCase());
@@ -495,16 +495,16 @@ describe("Liquidator", async function () {
                 expect(parsedLogs.args["from"].toLowerCase()).to.equal(liquidatorContract.address.toLowerCase());
             });
             it("Should have transfered all collateral assets owned by contract", async () => {
-                expect(parsedLogs.args["value"]).to.equal(await wethToken.balanceOf(alice.address));
+                expect(parsedLogs.args["value"]).to.equal(await usdcToken.balanceOf(alice.address));
             });
             it("Should have zero debt assets left in msg.sender", async () => {
-                expect(await daiToken.balanceOf(alice.address)).to.equal(BigInt(0))
+                expect(await wethToken.balanceOf(alice.address)).to.equal(BigInt(0))
             });
             it("Should have zero collateral assets left in the contract", async () => {
-                expect(await wethToken.balanceOf(liquidatorContract.address)).to.equal(BigInt(0))
+                expect(await usdcToken.balanceOf(liquidatorContract.address)).to.equal(BigInt(0))
             });
             it("Should have zero debt assets left in the contract", async () => {
-                expect(await daiToken.balanceOf(liquidatorContract.address)).to.equal(BigInt(0))
+                expect(await wethToken.balanceOf(liquidatorContract.address)).to.equal(BigInt(0))
             });
 
 

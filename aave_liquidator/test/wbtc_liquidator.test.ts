@@ -132,8 +132,13 @@ describe("Liquidator", async function () {
                 [process.env.MAINNET_DAI, process.env.MAINNET_WBTC, process.env.TEST_TARGET_USER_ADDRESS_1, process.env.TEST_LOAN_AMOUNT_WBTC, true]
             );
 
-
-            const flashLoan = await liquidatorContract.requestFlashLoan([process.env.MAINNET_WBTC!], [process.env.TEST_LOAN_AMOUNT_WBTC!], [0], newParams);
+            console.log(newParams);
+            const flashLoan = await liquidatorContract.requestFlashLoan(
+                [process.env.MAINNET_WBTC!],
+                [process.env.TEST_LOAN_AMOUNT_WBTC!],
+                [0],
+                newParams,
+            );
             txHash = await flashLoan.wait();
 
             // console.log("logs:", txHash.logs);

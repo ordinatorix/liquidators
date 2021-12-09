@@ -39,13 +39,15 @@ const config: HardhatUserConfig = {
         url: process.env.ALCHEMY_MAINNET_URL || "",
         // blockNumber: 12485341,
         // blockNumber: 12645947,
-        blockNumber: 12401787,
+        // blockNumber: 12401787,
+        blockNumber: 12930283,
+
       }
     },
     localhost: {
       url: "http://127.0.0.1:8545",
-      accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      // accounts:
+      //   process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     ropsten: {
       url: process.env.ALCHEMY_ROPSTEN_URL || "",

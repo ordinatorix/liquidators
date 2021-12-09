@@ -7,6 +7,7 @@
     "start": "hardhat node",
     "test-dai": "hardhat test test/dai_liquidator.test.ts",
     "test-weth": "hardhat test test/weth_liquidator.test.ts",
+    "test-usdc": "hardhat test test/usdc_liquidator.test.ts",
     "test-wbtc": "hardhat test test/wbtc_liquidator.test.ts",
     "compile": "hardhat compile",
     "clean": "hardhat clean",
