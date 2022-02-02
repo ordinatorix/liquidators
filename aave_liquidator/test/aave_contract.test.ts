@@ -46,6 +46,15 @@ describe("aave Lending Pool", function () {
                 console.log("user total collateral:", totalCollateralInETH);
                 console.log("user total det:", totaldebtInETH);
                 console.log("user health factor:", hf_eth);
+            } else if (initBlock == 12930283) {
+                const userData = await aaveLendingPool.getUserAccountData(process.env.TEST_TARGET_USER_ADDRESS_3!);
+                const hf_eth = ethers.utils.formatEther(userData.healthFactor);
+                const totalCollateralInETH = ethers.utils.formatEther(userData.totalCollateralETH);
+                const totaldebtInETH = ethers.utils.formatEther(userData.totalDebtETH);
+
+                console.log("user total collateral:", totalCollateralInETH);
+                console.log("user total det:", totaldebtInETH);
+                console.log("user health factor:", hf_eth);
             } else { console.log("warning!") }
         });
 

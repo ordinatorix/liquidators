@@ -9,6 +9,7 @@
     "test-weth": "hardhat test test/weth_liquidator.test.ts",
     "test-usdc": "hardhat test test/usdc_liquidator.test.ts",
     "test-wbtc": "hardhat test test/wbtc_liquidator.test.ts",
+    "test-aave": "hardhat test test/aave_contract.test.ts",
     "compile": "hardhat compile",
     "clean": "hardhat clean",
     "local-deploy": "hardhat run scripts/deploy.ts --network localhost",
