@@ -121,6 +121,9 @@ contract Liquidator is BaseUniswapAdapter {
         address initiator
     ) internal {
         console.log("_liquidateAndSwap");
+        console.log("colAsset", collateralAsset);
+        console.log("borAsset", borrowedAsset);
+        console.log("debtToCover", debtToCover);
         LiquidationCallLocalVars memory vars;
         vars.initCollateralBalance = IERC20(collateralAsset).balanceOf(
             address(this)
@@ -147,7 +150,7 @@ contract Liquidator is BaseUniswapAdapter {
                 vars.borrowedAssetLeftovers
             );
         }
-
+        console.log("premium:", premium);
         vars.flashLoanDebt = flashBorrowedAmount.add(premium);
         console.log("flashloan Debt:", vars.flashLoanDebt);
 
@@ -171,9 +174,16 @@ contract Liquidator is BaseUniswapAdapter {
         uint256 collateralBalanceAfter = IERC20(collateralAsset).balanceOf(
             address(this)
         );
+        uint256 borrowBalanceAfter = IERC20(borrowedAsset).balanceOf(
+            address(this)
+        );
         console.log(
             "collateral balance after liquidation:",
             collateralBalanceAfter
+        );
+        console.log(
+            "borrowed balance after liquidation:",
+            borrowBalanceAfter
         );
 
         // Track only collateral released, not current asset balance of the contract
@@ -181,7 +191,7 @@ contract Liquidator is BaseUniswapAdapter {
         vars.diffCollateralBalance = collateralBalanceAfter.sub(
             vars.initCollateralBalance
         );
-        console.log("released colateral DAI:", vars.diffCollateralBalance);
+        console.log("released colateral:", vars.diffCollateralBalance);
 
         if (collateralAsset != borrowedAsset) {
             console.log("collateral != borrowed");
@@ -225,7 +235,7 @@ contract Liquidator is BaseUniswapAdapter {
                 amntToReceive,
                 useEthPath
             );
-            console.log("swap", vars.soldAmount, "DAI for WBTC token");
+            console.log("swap", vars.soldAmount, "collateral for debt token");
 
             vars.remainingTokens = vars.diffCollateralBalance.sub(
                 vars.soldAmount

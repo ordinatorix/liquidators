@@ -168,8 +168,7 @@ describe("Liquidator", async function () {
                 const data: string = txLogs?.data;
                 const topics: string[] = txLogs?.topics;
                 parsedLogs = daiTokenInterface.parseLog({ data, topics });
-                // console.log("parsed", parsedLogs);
-                // console.log("txLog", txLogs);
+
             });
             it("Should approve spending of DAI.", () => {
                 expect(txLogs?.address.toLowerCase()).to.be.equal(daiToken.address.toLowerCase());
@@ -229,8 +228,10 @@ describe("Liquidator", async function () {
                 const data: string = txLogs.data;
                 const topics: string[] = txLogs.topics;
                 parsedLogs = aaveLendingPool.interface.parseLog({ data, topics });
-                // console.log(parsedLogs);
+                console.log(parsedLogs);
                 // console.log(BigInt(parsedLogs.args["debtToCover"]));
+                console.log(ethers.utils.formatEther(parsedLogs.args["liquidatedCollateralAmount"]));
+                console.log(BigInt(parsedLogs.args["liquidatedCollateralAmount"]));
             });
 
             it("Should be a liquidation call event log.", () => {
@@ -248,6 +249,7 @@ describe("Liquidator", async function () {
             it("Should have received WETH token in return.", () => {
                 expect(parsedLogs.args["collateralAsset"].toLowerCase()).to.be.equal(collateralAsset.toLowerCase());
             });
+            // it("Should have received the correct amount of WETH", () => { expect(parsedLogs.args["liquidatedCollateralAmount"]) });
 
             it("Should have been liquidated by liquidator contract.", () => {
                 expect(parsedLogs.args["liquidator"].toLowerCase()).to.be.equal(liquidatorContract.address.toLowerCase());
@@ -266,8 +268,6 @@ describe("Liquidator", async function () {
                 const data: string = txLogs.data;
                 const topics: string[] = txLogs.topics;
                 parsedLogs = wethTokenInterface.parseLog({ data, topics });
-                // console.log(parsedLogs);
-                // console.log(BigInt(parsedLogs.args["value"]));
             });
             it("Should be an approval event", () => {
                 expect(parsedLogs.name).to.be.equal("Approval");
